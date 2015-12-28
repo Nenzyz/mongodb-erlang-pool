@@ -5,7 +5,10 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  sasl,
+                  mongodb,
+                  poolboy
                  ]},
   {mod, { mongodb_pool_app, []}},
   {env, []}
