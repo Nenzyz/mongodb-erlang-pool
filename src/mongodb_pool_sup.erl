@@ -96,6 +96,7 @@ init([Pools, GlobalOrLocal]) ->
         poolboy:child_spec(Name, PoolArgs, WorkerArgs)
     end, Pools),
 
+    error_logger:info_msg("Started mongodb pool ~p ~p", [SupFlags, PoolSpecs]),
     {ok, {SupFlags, PoolSpecs}}.
 
 add_pool(SchemaName) ->
@@ -103,16 +104,21 @@ add_pool(SchemaName) ->
   error_logger:info_msg("Adding new MongoDB pool: ~p", [SchemaName]),
   {ok, DefaultWorkers} = application:get_env(ti_boss, default_mongo_pool_size),
   {ok, DefaultMongoProfile} =  application:get_env(ti_boss, default_mongo_pool),
-  ChildSpec = #{id => list_to_atom("mpool_" ++ SchemaName),
-    modules => [poolboy],
-    restart => permanent,
-    shutdown => 5000,
-    start => {poolboy,start_link,
-      [[{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
-        {worker_module,mc_worker}] ++ DefaultWorkers,
-        DefaultMongoProfile ++ [database, list_to_binary(SchemaName)]]},
-    type => worker},
+  DMP = dict:to_list(dict:store(database, ti_task:ensure_binary(SchemaName), dict:from_list(DefaultMongoProfile))),
+%%   ChildSpec = #{id => list_to_atom("mpool_" ++ SchemaName),
+%%     modules => [poolboy],
+%%     restart => permanent,
+%%     shutdown => 5000,
+%%     start => {poolboy,start_link,
+%%       [[{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
+%%         {worker_module,mc_worker}] ++ DefaultWorkers,
+%%         dict:to_list(DMP)]},
+%%     type => worker},
+  PChildSpec = poolboy:child_spec(list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
+    {worker_module,mc_worker}] ++ DefaultWorkers, DMP),
   [{mongo_pools_dets, Schemas}]= ets:lookup(tirate_stats, mongo_pools_dets),
-  ok = dets:insert(Schemas, {SchemaName, {list_to_atom("mpool_" ++ SchemaName), DefaultWorkers, DefaultMongoProfile}}),
+  ok = dets:insert(Schemas, {SchemaName, {list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
+    {worker_module,mc_worker}] ++ DefaultWorkers, DMP}}),
   ets:insert(mongo_schemas, [{list_to_atom(SchemaName), true}]),
-  supervisor:start_child(?MODULE, ChildSpec).
+  error_logger:info_msg("Starting mongodb pool ~p", [PChildSpec]),
+  supervisor:start_child(?MODULE, PChildSpec).
