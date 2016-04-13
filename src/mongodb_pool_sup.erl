@@ -33,9 +33,17 @@
 start_link() ->
   {ok, GlobalOrLocal} = application:get_env(mongodb_pool, global_or_local),
   [{mongo_pools_dets, Schemas}]= ets:lookup(tirate_stats, mongo_pools_dets),
-  error_logger:info_msg("Found tirate_stats link to schemas.dets: ~p", [Schemas]),
-  Pools = [{PoolName, Size, Params} || {_,{PoolName, Size, Params}} <- dets:foldl(fun(X, L) -> [X|L] end, [], Schemas)],
-  ets:insert(mongo_schemas, [{list_to_atom(SName), true} || {SName,_} <- dets:foldl(fun(X, L) -> [X|L] end, [], Schemas)]),
+  %% now Schemas (schemas.dets) contains only schema names
+  %% following code creates list of pool definition using 
+  %% default mongo pool definition in sys.config and replace "database" value:
+  {ok, DefaultWorkers} = application:get_env(ti_boss, default_mongo_pool_size),
+  {ok, DefaultMongoProfile} =  application:get_env(ti_boss, default_mongo_pool),
+  Pools = [{list_to_atom("mpool_" ++ SName),
+            [{name,{local,list_to_atom("mpool_" ++ SName)}},{worker_module,mc_worker}] ++ DefaultWorkers, 
+            dict:to_list(dict:store(database, ti_task:ensure_binary(SName), dict:from_list(DefaultMongoProfile)))
+  } || {SName} <- dets:foldl(fun(X, L) -> [X|L] end, [], Schemas)],
+
+  ets:insert(mongo_schemas, [{list_to_atom(SName), true} || {SName} <- dets:foldl(fun(X, L) -> [X|L] end, [], Schemas)]),
   error_logger:info_msg("Found mongo pools: ~p", [Pools]),
   start_link(Pools, GlobalOrLocal).
 
@@ -117,8 +125,11 @@ add_pool(SchemaName) ->
   PChildSpec = poolboy:child_spec(list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
     {worker_module,mc_worker}] ++ DefaultWorkers, DMP),
   [{mongo_pools_dets, Schemas}]= ets:lookup(tirate_stats, mongo_pools_dets),
-  ok = dets:insert(Schemas, {SchemaName, {list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
-    {worker_module,mc_worker}] ++ DefaultWorkers, DMP}}),
+  %ok = dets:insert(Schemas, {SchemaName, {list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
+  %{worker_module,mc_worker}] ++ DefaultWorkers, DMP}}),
+  
+  %%now Schemas (schemas.dets) contains only schema names
+  ok = dets:insert(Schemas,{SchemaName}),
   ets:insert(mongo_schemas, [{list_to_atom(SchemaName), true}]),
   error_logger:info_msg("Starting mongodb pool ~p", [PChildSpec]),
   supervisor:start_child(?MODULE, PChildSpec).
