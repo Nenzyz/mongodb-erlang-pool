@@ -60,6 +60,8 @@ delete_pool(PoolName) ->
 %% @doc Insert a document or multiple documents into a collection.
 %%      Returns the document or documents with an auto-generated _id if missing.
 -spec insert(term(), mongo:collection(), A) -> A.
+insert(_PoolName, _Coll, []) ->  
+  [];
 insert(PoolName, Coll, Docs) ->
   do(PoolName, fun(Connection) ->
                             mongo:insert(Connection, Coll, Docs)
