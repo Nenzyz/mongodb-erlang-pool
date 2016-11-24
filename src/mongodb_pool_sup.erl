@@ -32,10 +32,8 @@
 
 start_link() ->
   {ok, GlobalOrLocal} = application:get_env(mongodb_pool, global_or_local),
-  [{mongo_pools_dets, Schemas}]= ets:lookup(tirate_stats, mongo_pools_dets),
-  error_logger:info_msg("Found tirate_stats link to schemas.dets: ~p", [Schemas]),
-  Pools = [{PoolName, Size, Params} || {_,{PoolName, Size, Params}} <- dets:foldl(fun(X, L) -> [X|L] end, [], Schemas)],
-  ets:insert(mongo_schemas, [{list_to_atom(SName), true} || {SName,_} <- dets:foldl(fun(X, L) -> [X|L] end, [], Schemas)]),
+  Pools = [{PoolName, Size, Params} || {_,{PoolName, Size, Params}} <- dets:foldl(fun(X, L) -> [X|L] end, [], schemas)],
+  ets:insert(mongo_schemas, [{list_to_atom(SName), true} || {SName,_} <- dets:foldl(fun(X, L) -> [X|L] end, [], schemas)]),
   error_logger:info_msg("Found mongo pools: ~p", [Pools]),
   start_link(Pools, GlobalOrLocal).
 
@@ -116,8 +114,7 @@ add_pool(SchemaName) ->
 %%     type => worker},
   PChildSpec = poolboy:child_spec(list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
     {worker_module,mc_worker}] ++ DefaultWorkers, DMP),
-  [{mongo_pools_dets, Schemas}]= ets:lookup(tirate_stats, mongo_pools_dets),
-  ok = dets:insert(Schemas, {SchemaName, {list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
+  ok = dets:insert(schemas, {SchemaName, {list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
     {worker_module,mc_worker}] ++ DefaultWorkers, DMP}}),
   ets:insert(mongo_schemas, [{list_to_atom(SchemaName), true}]),
   error_logger:info_msg("Starting mongodb pool ~p", [PChildSpec]),
