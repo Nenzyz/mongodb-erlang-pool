@@ -59,95 +59,95 @@ delete_pool(PoolName) ->
 
 %% @doc Insert a document or multiple documents into a collection.
 %%      Returns the document or documents with an auto-generated _id if missing.
--spec insert(term(), mongo:collection(), A) -> A.
+-spec insert(term(), mc_worker_api:collection(), A) -> A.
 insert(_PoolName, _Coll, []) ->  
   [];
 insert(PoolName, Coll, Docs) ->
   do(PoolName, fun(Connection) ->
-                            mongo:insert(Connection, Coll, Docs)
+                            mc_worker_api:insert(Connection, Coll, Docs)
                         end).
 
 %% @doc Replace the document matching criteria entirely with the new Document.
--spec update(term(), mongo:collection(), mongo:selector(), bson:document()) -> ok.
+-spec update(term(), mc_worker_api:collection(), mc_worker_api:selector(), bson:document()) -> ok.
 update(PoolName, Coll, Selector, Doc) ->
   do(PoolName, fun(Connection) ->
-                            mongo:update(Connection, Coll, Selector, Doc)
+                            mc_worker_api:update(Connection, Coll, Selector, Doc)
                         end).
 
 %% @doc Replace the document matching criteria entirely with the new Document.
--spec update(term(), mongo:collection(), mongo:selector(), bson:document(), boolean()) -> ok.
+-spec update(term(), mc_worker_api:collection(), mc_worker_api:selector(), bson:document(), boolean()) -> ok.
 update(PoolName, Coll, Selector, Doc, Upsert) ->
   do(PoolName, fun(Connection) ->
-                            mongo:update(Connection, Coll, Selector, Doc, Upsert)
+                            mc_worker_api:update(Connection, Coll, Selector, Doc, Upsert)
                         end).
 
 %% @doc Replace the document matching criteria entirely with the new Document.
-% -spec update(term(), mongo:collection(), mongo:selector(), bson:document(), boolean(), boolean()) -> ok.
+% -spec update(term(), mc_worker_api:collection(), mc_worker_api:selector(), bson:document(), boolean(), boolean()) -> ok.
 % update(PoolName, Coll, Selector, Doc, Upsert, MultiUpdate) ->
 %   do(PoolName, fun(Connection) ->
-%                             mongo:update(Connection, Coll, Selector, Doc, Upsert, MultiUpdate)
+%                             mc_worker_api:update(Connection, Coll, Selector, Doc, Upsert, MultiUpdate)
 %                         end).
 
 %% @doc Delete selected documents
--spec delete(term(), mongo:collection(), mongo:selector()) -> ok.
+-spec delete(term(), mc_worker_api:collection(), mc_worker_api:selector()) -> ok.
 delete(PoolName, Coll, Selector) ->
   do(PoolName, fun(Connection) ->
-                            mongo:delete(Connection, Coll, Selector)
+                            mc_worker_api:delete(Connection, Coll, Selector)
                         end).
 
 %% @doc Delete first selected document.
--spec delete_one(term(), mongo:collection(), mongo:selector()) -> ok.
+-spec delete_one(term(), mc_worker_api:collection(), mc_worker_api:selector()) -> ok.
 delete_one(PoolName, Coll, Selector) ->
   do(PoolName, fun(Connection) ->
-                            mongo:delete_one(Connection, Coll, Selector)
+                            mc_worker_api:delete_one(Connection, Coll, Selector)
                         end).
 
 %% @doc Delete first selected document.
--spec find(term(), mongo:collection(), mongo:selector()) -> ok.
+-spec find(term(), mc_worker_api:collection(), mc_worker_api:selector()) -> ok.
 find(PoolName, Coll, Selector) ->
   do(PoolName, fun(Connection) ->
-                            mongo:find(Connection, Coll, Selector)
+                            mc_worker_api:find(Connection, Coll, Selector)
                         end).
-%% -spec find(term(), mongo:collection(), mongo:selector(), mongo::projector()) -> ok.
+%% -spec find(term(), mc_worker_api:collection(), mc_worker_api:selector(), mc_worker_api::projector()) -> ok.
 find(PoolName, Coll, Selector, Projector) ->
   do(PoolName, fun(Connection) ->
-                            mongo:find(Connection, Coll, Selector, Projector)
+                            mc_worker_api:find(Connection, Coll, Selector, Projector)
                         end).
 
 %% @doc Return first selected document, if any
--spec find_one(term(), mongo:collection(), mongo:selector()) -> {} | {bson:document()}.
+-spec find_one(term(), mc_worker_api:collection(), mc_worker_api:selector()) -> {} | {bson:document()}.
 find_one(PoolName, Coll, Selector) ->
   do(PoolName, fun(Connection) ->
-                            mongo:find_one(Connection, Coll, Selector)
+                            mc_worker_api:find_one(Connection, Coll, Selector)
                         end).
 
 %% @doc Return projection of first selected document, if any. Empty projection [] means full projection.
--spec find_one(term(), mongo:collection(), mongo:selector(), mongo:projector()) -> {} | {bson:document()}.
+-spec find_one(term(), mc_worker_api:collection(), mc_worker_api:selector(), mc_worker_api:projector()) -> {} | {bson:document()}.
 find_one(PoolName, Coll, Selector, Projector) ->
   do(PoolName, fun(Connection) ->
-                            mongo:find_one(Connection, Coll, Selector, Projector)
+                            mc_worker_api:find_one(Connection, Coll, Selector, Projector)
                         end).
 
 %% @doc Return projection of Nth selected document, if any. Empty projection [] means full projection.
-% -spec find_one(term(), mongo:collection(), mongo:selector(), mongo:projector(), mongo:skip()) -> {} | {bson:document()}.
+% -spec find_one(term(), mc_worker_api:collection(), mc_worker_api:selector(), mc_worker_api:projector(), mc_worker_api:skip()) -> {} | {bson:document()}.
 % find_one(PoolName, Coll, Selector, Projector, Skip) ->
 %   do(PoolName, fun(Connection) ->
-%                             mongo:find_one(Connection, Coll, Selector, Projector, Skip)
+%                             mc_worker_api:find_one(Connection, Coll, Selector, Projector, Skip)
 %                         end).
 
 %@doc Count selected documents
--spec count(term(), mongo:collection(), mongo:selector()) -> integer().
+-spec count(term(), mc_worker_api:collection(), mc_worker_api:selector()) -> integer().
 count(PoolName, Coll, Selector) ->
   do(PoolName, fun(Connection) ->
-                            mongo:count(Connection, Coll, Selector)
+                            mc_worker_api:count(Connection, Coll, Selector)
                         end).
 
 %@doc Count selected documents up to given max number; 0 means no max.
 %     Ie. stops counting when max is reached to save processing time.
--spec count(term(), mongo:collection(), mongo:selector(), integer()) -> integer().
+-spec count(term(), mc_worker_api:collection(), mc_worker_api:selector(), integer()) -> integer().
 count(PoolName, Coll, Selector, Limit) -> 
   do(PoolName, fun(Connection) ->
-                            mongo:count(Connection, Coll, Selector, Limit)
+                            mc_worker_api:count(Connection, Coll, Selector, Limit)
                         end).
 
 %% @doc Create index on collection according to given spec.
@@ -156,20 +156,20 @@ count(PoolName, Coll, Selector, Limit) ->
 %%      name     :: bson:utf8()
 %%      unique   :: boolean()
 %%      dropDups :: boolean()
--spec ensure_index(term(), mongo:collection(), bson:document()) -> ok.
+-spec ensure_index(term(), mc_worker_api:collection(), bson:document()) -> ok.
 ensure_index(PoolName, Coll, IndexSpec) ->  
   do(PoolName, fun(Connection) ->
-                            mongo:ensure_index(Connection, Coll, IndexSpec)
+                            mc_worker_api:ensure_index(Connection, Coll, IndexSpec)
                         end).
 
 %% @doc Execute given MongoDB command and return its result.
 -spec command(term(), bson:document()) -> {boolean(), bson:document()}. % Action
 command(PoolName, Command) ->
   do(PoolName, fun(Connection) ->
-                            mongo:command(Connection, Command)
+                            mc_worker_api:command(Connection, Command)
                         end).
 
--spec do(term(), mongo:action(A)) -> A.
+-spec do(term(), mc_worker_api:action(A)) -> A.
 
 do(PoolName, Fun) ->
   poolboy:transaction(PoolName, Fun).
