@@ -83,8 +83,8 @@ delete_pool(PoolName) ->
 
 init([Pools, GlobalOrLocal]) ->
     RestartStrategy = one_for_one,
-    MaxRestarts = 10,
-    MaxSecondsBetweenRestarts = 10,
+    MaxRestarts = 1000,
+    MaxSecondsBetweenRestarts = 30,
 
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
 
