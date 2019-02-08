@@ -26,6 +26,7 @@
         ]).
 -export([
          command/2,
+         command/3,
          ensure_index/3
         ]).
 -export([
@@ -150,6 +151,8 @@ count(PoolName, Coll, Selector, Limit) ->
                             mc_worker_api:count(Connection, Coll, Selector, Limit)
                         end).
 
+%% TBD: add Database to count. command...
+
 %% @doc Create index on collection according to given spec.
 %%      The key specification is a bson documents with the following fields:
 %%      key      :: bson document, for e.g. {field, 1, other, -1, location, 2d}, <strong>required</strong>
@@ -167,6 +170,13 @@ ensure_index(PoolName, Coll, IndexSpec) ->
 command(PoolName, Command) ->
   do(PoolName, fun(Connection) ->
                             mc_worker_api:command(Connection, Command)
+                        end).
+
+%% @doc Execute given MongoDB command and return its result specifying DB.
+-spec command(term(), term(), bson:document()) -> {boolean(), bson:document()}. % Action
+command(PoolName, Database, Command) ->
+  do(PoolName, fun(Connection) ->
+                            mc_worker_api:command(Database, Connection, Command)
                         end).
 
 -spec do(term(), mc_worker_api:action(A)) -> A.

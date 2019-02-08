@@ -32,10 +32,10 @@
 
 start_link() ->
   {ok, GlobalOrLocal} = application:get_env(mongodb_pool, global_or_local),
-  Pools = [{PoolName, Size, Params} || {_,{PoolName, Size, Params}} <- dets:foldl(fun(X, L) -> [X|L] end, [], schemas)],
-  ets:insert(mongo_schemas, [{list_to_atom(SName), true} || {SName,_} <- dets:foldl(fun(X, L) -> [X|L] end, [], schemas)]),
-  error_logger:info_msg("Found mongo pools: ~p", [Pools]),
-  start_link(Pools, GlobalOrLocal).
+  % Pools = [{PoolName, Size, Params} || {_,{PoolName, Size, Params}} <- dets:foldl(fun(X, L) -> [X|L] end, [], schemas)],
+  % ets:insert(mongo_schemas, [{list_to_atom(SName), true} || {SName,_} <- dets:foldl(fun(X, L) -> [X|L] end, [], schemas)]),
+  % error_logger:info_msg("Found mongo pools: ~p", [Pools]),
+  start_link([], GlobalOrLocal).
 
 start_link(Pools, GlobalOrLocal) ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, [Pools, GlobalOrLocal]).
@@ -98,10 +98,13 @@ init([Pools, GlobalOrLocal]) ->
     {ok, {SupFlags, PoolSpecs}}.
 
 add_pool(SchemaName) ->
-  %% TODO: rewrite default pool definition to get from DETS table and overwrite with new values
-  error_logger:info_msg("Adding new MongoDB pool: ~p", [SchemaName]),
   {ok, DefaultWorkers} = application:get_env(ti_boss, default_mongo_pool_size),
   {ok, DefaultMongoProfile} =  application:get_env(ti_boss, default_mongo_pool),
+  add_pool(SchemaName, DefaultWorkers, DefaultMongoProfile).
+
+add_pool(SchemaName, DefaultWorkers, DefaultMongoProfile) ->
+  %% TODO: rewrite default pool definition to get from DETS table and overwrite with new values
+  error_logger:info_msg("Adding new MongoDB pool: ~p", [SchemaName]),
   DMP = dict:to_list(dict:store(database, ti_task:ensure_binary(SchemaName), dict:from_list(DefaultMongoProfile))),
 %%   ChildSpec = #{id => list_to_atom("mpool_" ++ SchemaName),
 %%     modules => [poolboy],
@@ -114,8 +117,8 @@ add_pool(SchemaName) ->
 %%     type => worker},
   PChildSpec = poolboy:child_spec(list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
     {worker_module,mc_worker}] ++ DefaultWorkers, DMP),
-  ok = dets:insert(schemas, {SchemaName, {list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
-    {worker_module,mc_worker}] ++ DefaultWorkers, DMP}}),
-  ets:insert(mongo_schemas, [{list_to_atom(SchemaName), true}]),
+  % ok = dets:insert(schemas, {SchemaName, {list_to_atom("mpool_" ++ SchemaName), [{name,{local,list_to_atom("mpool_" ++ SchemaName)}},
+  %   {worker_module,mc_worker}] ++ DefaultWorkers, DMP}}),
+  % ets:insert(mongo_schemas, [{list_to_atom(SchemaName), true}]),
   error_logger:info_msg("Starting mongodb pool ~p", [PChildSpec]),
   supervisor:start_child(?MODULE, PChildSpec).
