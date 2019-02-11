@@ -8,26 +8,34 @@
 -export([start/0, stop/0]).
 -export([create_pool/4, delete_pool/1]).
 -export([
+         find/2,
          find/3,
          find/4,
+         find_one/2,
          find_one/3,
          find_one/4,
          % find_one/5,
+         insert/2,
          insert/3,
+         update/2,
          update/4,
          update/5,
          % update/6,
+         delete/2,
          delete/3,
+         delete_one/2,
          delete_one/3
         ]).
 -export([
+         count/2,
          count/3,
          count/4
         ]).
 -export([
          command/2,
          command/3,
-         ensure_index/3
+         ensure_index/3,
+         ensure_index/4
         ]).
 -export([
          do/2
@@ -68,6 +76,19 @@ insert(PoolName, Coll, Docs) ->
                             mc_worker_api:insert(Connection, Coll, Docs)
                         end).
 
+-spec insert(term(), map()) -> term().
+insert(PoolName, Map = #{connection := _, collection := _, doc := _}) ->  
+  do(PoolName, fun(_) ->
+                            mc_worker_api:insert(Map)
+                        end).
+
+%% @doc Replace the document matching criteria entirely with the new Document.
+-spec update(term(), map()) -> ok.
+update(PoolName, Map = #{connection := _, collection := _, selector := _, doc := _}) ->
+  do(PoolName, fun(_) ->
+                            mc_worker_api:update(Map)
+                        end).
+
 %% @doc Replace the document matching criteria entirely with the new Document.
 -spec update(term(), mc_worker_api:collection(), mc_worker_api:selector(), bson:document()) -> ok.
 update(PoolName, Coll, Selector, Doc) ->
@@ -96,11 +117,30 @@ delete(PoolName, Coll, Selector) ->
                             mc_worker_api:delete(Connection, Coll, Selector)
                         end).
 
+%% @doc Delete selected documents
+-spec delete(term(), map()) -> ok.
+delete(PoolName, Map = #{connection := _, collection := _, selector := _}) ->
+  do(PoolName, fun(_) ->
+                            mc_worker_api:delete(Map)
+                        end).
+
 %% @doc Delete first selected document.
 -spec delete_one(term(), mc_worker_api:collection(), mc_worker_api:selector()) -> ok.
 delete_one(PoolName, Coll, Selector) ->
   do(PoolName, fun(Connection) ->
                             mc_worker_api:delete_one(Connection, Coll, Selector)
+                        end).
+
+%% @doc Delete first selected document.
+-spec delete_one(term(), map()) -> ok.
+delete_one(PoolName, Map = #{connection := _, collection := _, selector := _}) ->
+  delete(PoolName, Map#{limit => 1}).
+
+%% @doc Delete first selected document.
+-spec find(term(), map()) -> ok.
+find(PoolName, Map = #{connection := _, collection := _, selector := _}) ->
+  do(PoolName, fun(_) ->
+                            mc_worker_api:find(Map)
                         end).
 
 %% @doc Delete first selected document.
@@ -113,6 +153,14 @@ find(PoolName, Coll, Selector) ->
 find(PoolName, Coll, Selector, Projector) ->
   do(PoolName, fun(Connection) ->
                             mc_worker_api:find(Connection, Coll, Selector, Projector)
+                        end).
+
+
+%% @doc Return first selected document, if any
+-spec find_one(term(), map()) -> {} | {bson:document()}.
+find_one(PoolName, Map = #{connection := _, collection := _, selector := _}) ->
+  do(PoolName, fun(_) ->
+                            mc_worker_api:find_one(Map)
                         end).
 
 %% @doc Return first selected document, if any
@@ -137,10 +185,17 @@ find_one(PoolName, Coll, Selector, Projector) ->
 %                         end).
 
 %@doc Count selected documents
+-spec count(term(), map()) -> integer().
+count(PoolName, Map = #{connection := _, collection := _, selector := _}) ->
+  do(PoolName, fun(_) ->
+                          mc_worker_api:count(Map)
+                      end).
+
+%@doc Count selected documents
 -spec count(term(), mc_worker_api:collection(), mc_worker_api:selector()) -> integer().
 count(PoolName, Coll, Selector) ->
   do(PoolName, fun(Connection) ->
-                            mc_worker_api:count(Connection, Coll, Selector)
+                            mc_worker_api:count(#{connection => Connection, collection => Coll, selector => Selector})
                         end).
 
 %@doc Count selected documents up to given max number; 0 means no max.
@@ -148,7 +203,7 @@ count(PoolName, Coll, Selector) ->
 -spec count(term(), mc_worker_api:collection(), mc_worker_api:selector(), integer()) -> integer().
 count(PoolName, Coll, Selector, Limit) -> 
   do(PoolName, fun(Connection) ->
-                            mc_worker_api:count(Connection, Coll, Selector, Limit)
+                            mc_worker_api:count(#{connection => Connection, collection => Coll, selector => Selector, limit => Limit})
                         end).
 
 %% TBD: add Database to count. command...
@@ -163,6 +218,18 @@ count(PoolName, Coll, Selector, Limit) ->
 ensure_index(PoolName, Coll, IndexSpec) ->  
   do(PoolName, fun(Connection) ->
                             mc_worker_api:ensure_index(Connection, Coll, IndexSpec)
+                        end).
+
+%% @doc Create index on collection according to given spec.
+%%      The key specification is a bson documents with the following fields:
+%%      key      :: bson document, for e.g. {field, 1, other, -1, location, 2d}, <strong>required</strong>
+%%      name     :: bson:utf8()
+%%      unique   :: boolean()
+%%      dropDups :: boolean()
+-spec ensure_index(term(), mc_worker_api:collection(), bson:document(), term()) -> ok.
+ensure_index(PoolName, Coll, IndexSpec, DB) ->  
+  do(PoolName, fun(Connection) ->
+                            mc_worker_api:ensure_index(Connection, Coll, IndexSpec, DB)
                         end).
 
 %% @doc Execute given MongoDB command and return its result.
