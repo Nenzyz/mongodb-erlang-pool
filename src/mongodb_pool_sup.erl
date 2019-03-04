@@ -8,7 +8,7 @@
 %% API
 -export([start_link/0, start_link/2]).
 -export([create_pool/3, create_pool/4, delete_pool/1]).
--export([add_pool/1]).
+-export([add_pool/1, add_pool/3]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -104,7 +104,7 @@ add_pool(SchemaName) ->
 
 add_pool(SchemaName, DefaultWorkers, DefaultMongoProfile) ->
   %% TODO: rewrite default pool definition to get from DETS table and overwrite with new values
-  error_logger:info_msg("Adding new MongoDB pool: ~p", [SchemaName]),
+  error_logger:info_msg("Adding new MongoDB pool: ~p", [[SchemaName, DefaultWorkers, DefaultMongoProfile]]),
   DMP = dict:to_list(dict:store(database, ti_task:ensure_binary(SchemaName), dict:from_list(DefaultMongoProfile))),
 %%   ChildSpec = #{id => list_to_atom("mpool_" ++ SchemaName),
 %%     modules => [poolboy],
